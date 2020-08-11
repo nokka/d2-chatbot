@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -56,12 +57,13 @@ func (c *Client) Open() error {
 
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
-	log.Println("SUBSCRIBING")
-	log.Println(message)
 	err := c.subscribers.Subscribe(context.Background(), message.Account, message.ChatID)
 	if err != nil {
 		return err
 	}
+
+	// Notify subscriber.
+	c.conn.Whisper(message.Account, fmt.Sprintf("subscribed to %s", message.ChatID))
 
 	return nil
 }

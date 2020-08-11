@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -41,6 +42,6 @@ func (d decoder) Decode(data []byte) (*Message, bool) {
 		ChatID:  matches[chatID],
 		Account: matches[account],
 		Cmd:     matches[cmd],
-		Message: matches[msg],
+		Message: fmt.Sprintf("[%s] %s", matches[account], matches[msg]),
 	}, true
 }
