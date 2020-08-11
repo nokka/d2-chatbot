@@ -16,13 +16,13 @@ const (
 	TypePublish   = "pub"
 	account       = 1
 	cmd           = 2
-	id            = 3
+	chatID        = 3
 	msg           = 4
 )
 
 // Message ...
 type Message struct {
-	ID      string
+	ChatID  string
 	Account string
 	Cmd     string
 	Message string
@@ -37,7 +37,7 @@ func (d decoder) Decode(data []byte) (*Message, bool) {
 	}
 
 	return &Message{
-		ID:      matches[id],
+		ChatID:  matches[chatID],
 		Account: matches[account],
 		Cmd:     matches[cmd],
 		Message: matches[msg],

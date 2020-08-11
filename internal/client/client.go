@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 	"github.com/nokka/d2client"
@@ -11,7 +12,7 @@ import (
 // subscriberRepository is the interface representation of the data layer
 // the service depend on.
 type subscriberRepository interface {
-	Find(ctx context.Context, account string) (*subscriber.Subscriber, error)
+	FindSubscribers(ctx context.Context, chatID string) (map[string]subscriber.Subscriber, error)
 	Subscribe(ctx context.Context, account string, chatID string) error
 	Unsubscribe(ctx context.Context, account string, chatID string) error
 }
@@ -24,6 +25,7 @@ type Client struct {
 	decoder     decoder
 	conn        d2client.Client
 	subscribers subscriberRepository
+	publishLock sync.Mutex
 }
 
 // Open will open a tcp connection to the d2 server.
@@ -55,7 +57,7 @@ func (c *Client) Open() error {
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
 	fmt.Println("SUBSCRIBING")
-	err := c.subscribers.Subscribe(context.Background(), message.Account, message.ID)
+	err := c.subscribers.Subscribe(context.Background(), message.Account, message.ChatID)
 	if err != nil {
 		return err
 	}
@@ -65,13 +67,28 @@ func (c *Client) Subscribe(message *Message) error {
 
 // Publish ...
 func (c *Client) Publish(message *Message) error {
-	fmt.Println("PUBLISHING")
-	subscriber, err := c.subscribers.Find(context.Background(), message.Account)
+	// Lock to publish in order to preserve message order integrity.
+	c.publishLock.Lock()
+
+	// Unlock when we're done.
+	defer c.publishLock.Unlock()
+
+	subscribers, err := c.subscribers.FindSubscribers(context.Background(), message.ChatID)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(subscriber)
+	for _, sub := range subscribers {
+		/*if k == message.Account {
+			continue
+		}*/
+
+		err := c.conn.Whisper(sub.Account, message.Message)
+		if err != nil {
+			fmt.Println("failed to delivery message", err)
+		}
+
+	}
 
 	return nil
 }
