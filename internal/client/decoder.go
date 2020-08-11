@@ -5,19 +5,20 @@ import (
 )
 
 // Compile the regex once.
-var r = regexp.MustCompile(`^<from\s+([a-z0-9]+)>\s+([a-z]{3})\s+([a-z]{2})\s*([a-z]+)?`)
+var r = regexp.MustCompile(`^<from\s+([a-z0-9_\-]+)>\s+([a-z]{3})\s+([a-z]{2})\s*([a-z]+)?`)
 
 // Decoder ...
 type decoder struct{}
 
 // Allowed message types.
 const (
-	TypeSubscribe = "sub"
-	TypePublish   = "pub"
-	account       = 1
-	cmd           = 2
-	chatID        = 3
-	msg           = 4
+	TypeSubscribe   = "sub"
+	TypeUnsubscribe = "uns"
+	TypePublish     = "pub"
+	account         = 1
+	cmd             = 2
+	chatID          = 3
+	msg             = 4
 )
 
 // Message ...

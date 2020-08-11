@@ -13,10 +13,16 @@ type InmemRepository struct {
 }
 
 // FindSubscribers ...
-func (r *InmemRepository) FindSubscribers(ctx context.Context, chatID string) (map[string]subscriber.Subscriber, error) {
+func (r *InmemRepository) FindSubscribers(ctx context.Context, chatID string) ([]subscriber.Subscriber, error) {
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
-		return chat, nil
+		var online []subscriber.Subscriber
+		for _, sub := range chat {
+			if sub.Online {
+				online = append(online, sub)
+			}
+		}
+		return online, nil
 	}
 
 	return nil, errors.New("failed to find subscribers, chat not found")

@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"sync"
 
 	"github.com/nokka/d2-chatbot/internal/subscriber"
@@ -12,7 +12,7 @@ import (
 // subscriberRepository is the interface representation of the data layer
 // the service depend on.
 type subscriberRepository interface {
-	FindSubscribers(ctx context.Context, chatID string) (map[string]subscriber.Subscriber, error)
+	FindSubscribers(ctx context.Context, chatID string) ([]subscriber.Subscriber, error)
 	Subscribe(ctx context.Context, account string, chatID string) error
 	Unsubscribe(ctx context.Context, account string, chatID string) error
 }
@@ -56,7 +56,8 @@ func (c *Client) Open() error {
 
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
-	fmt.Println("SUBSCRIBING")
+	log.Println("SUBSCRIBING")
+	log.Println(message)
 	err := c.subscribers.Subscribe(context.Background(), message.Account, message.ChatID)
 	if err != nil {
 		return err
@@ -79,13 +80,13 @@ func (c *Client) Publish(message *Message) error {
 	}
 
 	for _, sub := range subscribers {
-		/*if k == message.Account {
+		if sub.Account == message.Account {
 			continue
-		}*/
+		}
 
 		err := c.conn.Whisper(sub.Account, message.Message)
 		if err != nil {
-			fmt.Println("failed to delivery message", err)
+			log.Println("failed to delivery message", err)
 		}
 
 	}
@@ -114,14 +115,18 @@ func (c *Client) listenAndClose() {
 				switch decoded.Cmd {
 				case TypeSubscribe:
 					c.Subscribe(decoded)
+				case TypeUnsubscribe:
+					log.Println("unsubscribe", decoded)
 				case TypePublish:
-					c.Publish(decoded)
+					go c.Publish(decoded)
+				default:
+					log.Printf("unknown cmd received: %s", decoded.Cmd)
 				}
+
 			}
 
 		case err := <-errors:
-			fmt.Println("GOT ERROR")
-			fmt.Println(err)
+			log.Println("got error while listening on client output", err)
 			break
 		}
 	}
