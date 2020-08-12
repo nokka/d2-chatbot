@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/nokka/d2-chatbot/internal/client"
 	"github.com/nokka/d2-chatbot/internal/inmem"
@@ -12,9 +14,9 @@ import (
 
 func main() {
 	var (
-		serverAddress = env.String("SERVER_ADDRESS", "45.63.11.238:6112")
-		botUsername   = env.String("BOT_USERNAME", "chatpls")
-		botPassword   = env.String("BOT_PASSWORD", "123")
+		serverAddress = env.String("SERVER_ADDRESS", "")
+		botUsername   = env.String("BOT_USERNAME", "")
+		botPassword   = env.String("BOT_PASSWORD", "")
 	)
 
 	if serverAddress == "" {
@@ -32,9 +34,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Channel to receive errors on.
-	//errorChannel := make(chan error)
-
 	// Repositories
 	subscriberRepository := inmem.NewInmemRepository()
 
@@ -49,12 +48,12 @@ func main() {
 		log.Println("failed to open hc connection")
 		os.Exit(0)
 	}
-	// Setup services.
-	//s := subscriber.New()
-	//publisher.New(client)
+
+	// Channel to receive errors on.
+	errorChannel := make(chan error)
 
 	// Capture interupts.
-	/*go func() {
+	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errorChannel <- fmt.Errorf("got signal %s", <-c)
@@ -64,8 +63,5 @@ func main() {
 	if err := <-errorChannel; err != nil {
 		log.Println(err)
 		os.Exit(1)
-	}*/
-
-	fmt.Println("waiting indefinitely")
-	select {}
+	}
 }
