@@ -3,17 +3,22 @@ package inmem
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 )
 
-// InmemRepository ...
-type InmemRepository struct {
+// Repository ...
+type Repository struct {
 	Chats map[string]map[string]subscriber.Subscriber
+	rwm   sync.RWMutex
 }
 
 // FindSubscribers ...
-func (r *InmemRepository) FindSubscribers(ctx context.Context, chatID string) ([]subscriber.Subscriber, error) {
+func (r *Repository) FindSubscribers(ctx context.Context, chatID string) ([]subscriber.Subscriber, error) {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
 		var online []subscriber.Subscriber
@@ -29,7 +34,10 @@ func (r *InmemRepository) FindSubscribers(ctx context.Context, chatID string) ([
 }
 
 // Subscribe ...
-func (r *InmemRepository) Subscribe(ctx context.Context, account string, chatID string) error {
+func (r *Repository) Subscribe(ctx context.Context, account string, chatID string) error {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
 		// If we can't find the subscriber, add it.
@@ -48,7 +56,10 @@ func (r *InmemRepository) Subscribe(ctx context.Context, account string, chatID 
 }
 
 // Unsubscribe ...
-func (r *InmemRepository) Unsubscribe(ctx context.Context, account string, chatID string) error {
+func (r *Repository) Unsubscribe(ctx context.Context, account string, chatID string) error {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
 		delete(chat, account)
@@ -59,11 +70,13 @@ func (r *InmemRepository) Unsubscribe(ctx context.Context, account string, chatI
 	return nil
 }
 
-// NewInmemRepository ...
-func NewInmemRepository() *InmemRepository {
-	return &InmemRepository{
+// NewRepository ...
+func NewRepository() *Repository {
+	return &Repository{
 		Chats: map[string]map[string]subscriber.Subscriber{
-			"hc": make(map[string]subscriber.Subscriber, 0),
+			"chat":  make(map[string]subscriber.Subscriber, 0),
+			"trade": make(map[string]subscriber.Subscriber, 0),
+			"hc":    make(map[string]subscriber.Subscriber, 0),
 		},
 	}
 }

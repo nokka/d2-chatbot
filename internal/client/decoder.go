@@ -6,7 +6,8 @@ import (
 )
 
 // Compile the regex once.
-var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([a-z]{3})\s+([a-z]{2})\s*([a-z .,_\-'"!?]+)?`)
+//var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([a-z]{3})\s+([a-z]{2})\s*([a-z .,_\-'"!?]+)?`)
+var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!]{1})\s*([a-z .,_\-'"!?]+)?`)
 
 // Decoder ...
 type decoder struct{}
@@ -14,20 +15,14 @@ type decoder struct{}
 // Allowed message types.
 const (
 	// Commands.
-	TypeSubscribe   = "sub"
-	TypeUnsubscribe = "uns"
-	TypePublish     = "pub"
-
-	// Chat IDs.
-	ChatHC    = "hc"
-	ChatSC    = "sc"
-	ChatTrade = "tr"
+	TypeSubscribe   = "@"
+	TypeUnsubscribe = "!"
+	TypePublish     = "#"
 
 	// Indices.
 	account = 1
 	cmd     = 2
-	chatID  = 3
-	msg     = 4
+	msg     = 3
 )
 
 // Allowed commands.
@@ -37,16 +32,8 @@ var cmds = map[string]struct{}{
 	TypeUnsubscribe: {},
 }
 
-// Allowed chat ids.
-var chatIDs = map[string]struct{}{
-	ChatHC:    {},
-	ChatSC:    {},
-	ChatTrade: {},
-}
-
 // Message ...
 type Message struct {
-	ChatID  string
 	Account string
 	Cmd     string
 	Message string
@@ -56,7 +43,7 @@ type Message struct {
 func (d decoder) Decode(data []byte) (*Message, bool) {
 	matches := r.FindStringSubmatch(string(data))
 
-	if len(matches) != 5 {
+	if len(matches) != 4 {
 		return nil, false
 	}
 
@@ -65,13 +52,7 @@ func (d decoder) Decode(data []byte) (*Message, bool) {
 		return nil, false
 	}
 
-	// Return invalid if the chat id isn't allowed.
-	if _, ok := chatIDs[matches[chatID]]; !ok {
-		return nil, false
-	}
-
 	message := &Message{
-		ChatID:  matches[chatID],
 		Account: matches[account],
 		Cmd:     matches[cmd],
 	}

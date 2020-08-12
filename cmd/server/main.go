@@ -15,8 +15,12 @@ import (
 func main() {
 	var (
 		serverAddress = env.String("SERVER_ADDRESS", "")
-		botUsername   = env.String("BOT_USERNAME", "")
-		botPassword   = env.String("BOT_PASSWORD", "")
+		chatUsername  = env.String("CHAT_USERNAME", "chat")
+		chatPassword  = env.String("CHAT_PASSWORD", "CivKekEmBeft")
+		tradeUsername = env.String("TRADE_USERNAME", "trade")
+		tradePassword = env.String("TRADE_PASSWORD", "CivKekEmBeft")
+		hcUsername    = env.String("HC_USERNAME", "hc")
+		hcPassword    = env.String("HC_PASSWORD", "CivKekEmBeft")
 	)
 
 	if serverAddress == "" {
@@ -24,27 +28,74 @@ func main() {
 		os.Exit(0)
 	}
 
-	if botUsername == "" {
-		log.Println("bot username not set")
+	if chatUsername == "" {
+		log.Println("chat username not set")
 		os.Exit(0)
 	}
 
-	if botPassword == "" {
-		log.Println("bot password not set")
+	if chatPassword == "" {
+		log.Println("chat password not set")
+		os.Exit(0)
+	}
+
+	if tradeUsername == "" {
+		log.Println("trade username not set")
+		os.Exit(0)
+	}
+
+	if tradePassword == "" {
+		log.Println("trade password not set")
+		os.Exit(0)
+	}
+
+	if hcUsername == "" {
+		log.Println("hc username not set")
+		os.Exit(0)
+	}
+
+	if hcPassword == "" {
+		log.Println("hc password not set")
 		os.Exit(0)
 	}
 
 	// Repositories
-	subscriberRepository := inmem.NewInmemRepository()
+	subscriberRepository := inmem.NewRepository()
 
-	hcc := client.New(
+	// Chat bot connection.
+	chatBot := client.New(
 		serverAddress,
-		botUsername,
-		botPassword,
+		chatUsername,
+		chatPassword,
 		subscriberRepository,
 	)
 
-	if err := hcc.Open(); err != nil {
+	if err := chatBot.Open(); err != nil {
+		log.Println("failed to open chat connection")
+		os.Exit(0)
+	}
+
+	// Trade bot connection.
+	tradeBot := client.New(
+		serverAddress,
+		tradeUsername,
+		tradePassword,
+		subscriberRepository,
+	)
+
+	if err := tradeBot.Open(); err != nil {
+		log.Println("failed to open trade connection")
+		os.Exit(0)
+	}
+
+	// HC bot connection.
+	hcBot := client.New(
+		serverAddress,
+		hcUsername,
+		hcPassword,
+		subscriberRepository,
+	)
+
+	if err := hcBot.Open(); err != nil {
 		log.Println("failed to open hc connection")
 		os.Exit(0)
 	}

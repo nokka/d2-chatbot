@@ -21,7 +21,7 @@ type subscriberRepository interface {
 // Client wraps the connection to the d2 server and is responsible for communication.
 type Client struct {
 	addr        string
-	username    string
+	chatID      string
 	password    string
 	decoder     decoder
 	conn        d2client.Client
@@ -41,7 +41,7 @@ func (c *Client) Open() error {
 	}
 
 	// Login with the username and password.
-	err = client.Login(c.username, c.password)
+	err = client.Login(c.chatID, c.password)
 	if err != nil {
 		return err
 	}
@@ -57,26 +57,27 @@ func (c *Client) Open() error {
 
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
-	err := c.subscribers.Subscribe(context.Background(), message.Account, message.ChatID)
+	fmt.Println("SUBSCRIBRING", message.Account, c.chatID)
+	err := c.subscribers.Subscribe(context.Background(), message.Account, c.chatID)
 	if err != nil {
 		return err
 	}
 
 	// Notify subscriber.
-	c.conn.Whisper(message.Account, fmt.Sprintf("[subscribed] %s", message.ChatID))
+	c.conn.Whisper(message.Account, fmt.Sprintf("[subscribed] %s", c.chatID))
 
 	return nil
 }
 
 // Unsubscribe ...
 func (c *Client) Unsubscribe(message *Message) error {
-	err := c.subscribers.Unsubscribe(context.Background(), message.Account, message.ChatID)
+	err := c.subscribers.Unsubscribe(context.Background(), message.Account, c.chatID)
 	if err != nil {
 		return err
 	}
 
 	// Notify subscriber.
-	c.conn.Whisper(message.Account, fmt.Sprintf("[unsubscribed] %s", message.ChatID))
+	c.conn.Whisper(message.Account, fmt.Sprintf("[unsubscribed] %s", c.chatID))
 
 	return nil
 }
@@ -89,7 +90,7 @@ func (c *Client) Publish(message *Message) error {
 	// Unlock when we're done.
 	defer c.publishLock.Unlock()
 
-	subscribers, err := c.subscribers.FindSubscribers(context.Background(), message.ChatID)
+	subscribers, err := c.subscribers.FindSubscribers(context.Background(), c.chatID)
 	if err != nil {
 		return err
 	}
@@ -129,6 +130,7 @@ func (c *Client) listenAndClose() {
 		select {
 		// This case means we recieved data on the connection.
 		case data := <-ch:
+			fmt.Println(string(data))
 			if decoded, valid := c.decoder.Decode(data); valid {
 				switch decoded.Cmd {
 				case TypeSubscribe:
@@ -162,10 +164,10 @@ func (c *Client) listenAndClose() {
 }
 
 // New ...
-func New(addr string, username string, password string, subscribers subscriberRepository) *Client {
+func New(addr string, chatID string, password string, subscribers subscriberRepository) *Client {
 	return &Client{
 		addr:        addr,
-		username:    username,
+		chatID:      chatID,
 		password:    password,
 		decoder:     decoder{},
 		subscribers: subscribers,

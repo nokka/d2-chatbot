@@ -16,53 +16,40 @@ func TestDecode(t *testing.T) {
 	}{
 		{
 			name:  "valid subscribe",
-			input: []byte("<from nokka> sub hc"),
+			input: []byte("<from nokka> @"),
 			msg: &Message{
-				ChatID:  "hc",
 				Account: "nokka",
-				Cmd:     "sub",
+				Cmd:     TypeSubscribe,
 			},
 			valid: true,
 		},
 		{
-			name:  "invalid subscribe - chat id",
-			input: []byte("<from nokka> sub derp"),
-			valid: false,
-		},
-		{
-			name:  "invalid subscribe - cmd",
-			input: []byte("<from nokka> suu hc"),
+			name:  "invalid subscribe",
+			input: []byte("<from nokka> sub"),
 			valid: false,
 		},
 		{
 			name:  "valid subscribe - truncate message",
-			input: []byte("<from nokka> sub hc truncated"),
+			input: []byte("<from nokka> @ truncated"),
 			msg: &Message{
-				ChatID:  "hc",
 				Account: "nokka",
-				Cmd:     "sub",
+				Cmd:     TypeSubscribe,
 			},
 			valid: true,
 		},
 		{
 			name:  "valid publish",
-			input: []byte("<from nokka> pub hc hello there"),
+			input: []byte("<from nokka> # hello there"),
 			msg: &Message{
-				ChatID:  "hc",
 				Account: "nokka",
-				Cmd:     "pub",
+				Cmd:     TypePublish,
 				Message: "[nokka] hello there",
 			},
 			valid: true,
 		},
 		{
-			name:  "invalid publish - chat id",
-			input: []byte("<from nokka> pub random hello there"),
-			valid: false,
-		},
-		{
-			name:  "invalid publish - cmd",
-			input: []byte("<from nokka> ppp hc hello there"),
+			name:  "invalid publish",
+			input: []byte("<from nokka> pub"),
 			valid: false,
 		},
 		{
