@@ -16,11 +16,11 @@ func main() {
 	var (
 		serverAddress = env.String("SERVER_ADDRESS", "")
 		chatUsername  = env.String("CHAT_USERNAME", "chat")
-		chatPassword  = env.String("CHAT_PASSWORD", "CivKekEmBeft")
+		chatPassword  = env.String("CHAT_PASSWORD", "")
 		tradeUsername = env.String("TRADE_USERNAME", "trade")
-		tradePassword = env.String("TRADE_PASSWORD", "CivKekEmBeft")
+		tradePassword = env.String("TRADE_PASSWORD", "")
 		hcUsername    = env.String("HC_USERNAME", "hc")
-		hcPassword    = env.String("HC_PASSWORD", "CivKekEmBeft")
+		hcPassword    = env.String("HC_PASSWORD", "")
 	)
 
 	if serverAddress == "" {

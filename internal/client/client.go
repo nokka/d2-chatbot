@@ -130,7 +130,6 @@ func (c *Client) listenAndClose() {
 		select {
 		// This case means we recieved data on the connection.
 		case data := <-ch:
-			fmt.Println(string(data))
 			if decoded, valid := c.decoder.Decode(data); valid {
 				switch decoded.Cmd {
 				case TypeSubscribe:
