@@ -65,6 +65,11 @@ func TestDecode(t *testing.T) {
 			input: []byte("<from nokka> ppp hc hello there"),
 			valid: false,
 		},
+		{
+			name:  "invalid publish - random",
+			input: []byte("<from nokka> random message that won't get through"),
+			valid: false,
+		},
 	}
 
 	for _, tt := range tests {
