@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/nokka/d2-chatbot/internal/client"
-	"github.com/nokka/d2-chatbot/internal/storage"
+	"github.com/nokka/d2-chatbot/internal/inmem"
 	"github.com/nokka/d2-chatbot/pkg/env"
 )
 
@@ -36,7 +36,7 @@ func main() {
 	//errorChannel := make(chan error)
 
 	// Repositories
-	subscriberRepository := storage.NewInmemRepository()
+	subscriberRepository := inmem.NewInmemRepository()
 
 	hcc := client.New(
 		serverAddress,

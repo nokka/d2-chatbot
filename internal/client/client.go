@@ -63,7 +63,20 @@ func (c *Client) Subscribe(message *Message) error {
 	}
 
 	// Notify subscriber.
-	c.conn.Whisper(message.Account, fmt.Sprintf("subscribed to %s", message.ChatID))
+	c.conn.Whisper(message.Account, fmt.Sprintf("[subscribed] %s", message.ChatID))
+
+	return nil
+}
+
+// Unsubscribe ...
+func (c *Client) Unsubscribe(message *Message) error {
+	err := c.subscribers.Unsubscribe(context.Background(), message.Account, message.ChatID)
+	if err != nil {
+		return err
+	}
+
+	// Notify subscriber.
+	c.conn.Whisper(message.Account, fmt.Sprintf("[unsubscribed] %s", message.ChatID))
 
 	return nil
 }
@@ -81,7 +94,10 @@ func (c *Client) Publish(message *Message) error {
 		return err
 	}
 
-	for _, sub := range subscribers {
+	for _, s := range subscribers {
+		// Localize scope.
+		sub := s
+
 		if sub.Account == message.Account {
 			continue
 		}
@@ -116,11 +132,23 @@ func (c *Client) listenAndClose() {
 			if decoded, valid := c.decoder.Decode(data); valid {
 				switch decoded.Cmd {
 				case TypeSubscribe:
-					c.Subscribe(decoded)
+					err := c.Subscribe(decoded)
+					if err != nil {
+						log.Printf("failed to subscribe %s", err)
+					}
 				case TypeUnsubscribe:
-					log.Println("unsubscribe", decoded)
+					err := c.Unsubscribe(decoded)
+					if err != nil {
+						log.Printf("failed to unsubscribe %s", err)
+					}
 				case TypePublish:
-					go c.Publish(decoded)
+					// Publish on a separate thread.
+					go func() {
+						err := c.Publish(decoded)
+						if err != nil {
+							log.Printf("failed to publish %s", err)
+						}
+					}()
 				default:
 					log.Printf("unknown cmd received: %s", decoded.Cmd)
 				}
