@@ -104,7 +104,7 @@ func (c *Client) Publish(message *Message) error {
 
 		err := c.conn.Whisper(sub.Account, message.Message)
 		if err != nil {
-			log.Println("failed to delivery message", err)
+			log.Println("failed to deliver message", err)
 		}
 
 	}
@@ -152,7 +152,6 @@ func (c *Client) listenAndClose() {
 				default:
 					log.Printf("unknown cmd received: %s", decoded.Cmd)
 				}
-
 			}
 
 		case err := <-errors:
