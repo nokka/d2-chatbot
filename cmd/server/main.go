@@ -72,21 +72,21 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Close the pool when we're done.
+	defer pool.Close()
+
 	err = pool.Ping()
 	if err != nil {
 		log.Println("failed to ping mysql connection", err)
 		os.Exit(0)
 	}
 
-	// Close the pool when we're done.
-	defer pool.Close()
-
 	// Repositories
 	inmemRepository := inmem.NewSubscriberRepository()
 	subscriberRepository := mysql.NewSubscriberRepository(pool)
 
 	// Chat bot connection.
-	chatBot := client.New(
+	cb := client.New(
 		serverAddress,
 		chatUsername,
 		chatPassword,
@@ -94,13 +94,20 @@ func main() {
 		subscriberRepository,
 	)
 
-	if err := chatBot.Open(); err != nil {
+	// Sync the chat bot in memory store with the persistent store.
+	if err := cb.Sync(); err != nil {
+		log.Println("failed to sync chat data")
+		os.Exit(0)
+	}
+
+	// Make sure the sync has run before we open for incoming traffic.
+	if err := cb.Open(); err != nil {
 		log.Println("failed to open chat connection")
 		os.Exit(0)
 	}
 
 	// Trade bot connection.
-	tradeBot := client.New(
+	tb := client.New(
 		serverAddress,
 		tradeUsername,
 		tradePassword,
@@ -108,13 +115,20 @@ func main() {
 		subscriberRepository,
 	)
 
-	if err := tradeBot.Open(); err != nil {
+	// Sync the trade bot in memory store with the persistent store.
+	if err := tb.Sync(); err != nil {
+		log.Println("failed to sync trade data")
+		os.Exit(0)
+	}
+
+	// Make sure the sync has run before we open for incoming traffic.
+	if err := tb.Open(); err != nil {
 		log.Println("failed to open trade connection")
 		os.Exit(0)
 	}
 
 	// HC bot connection.
-	hcBot := client.New(
+	hc := client.New(
 		serverAddress,
 		hcUsername,
 		hcPassword,
@@ -122,7 +136,14 @@ func main() {
 		subscriberRepository,
 	)
 
-	if err := hcBot.Open(); err != nil {
+	// Sync the hc bot in memory store with the persistent store.
+	if err := hc.Sync(); err != nil {
+		log.Println("failed to sync hc data")
+		os.Exit(0)
+	}
+
+	// Make sure the sync has run before we open for incoming traffic.
+	if err := hc.Open(); err != nil {
 		log.Println("failed to open hc connection")
 		os.Exit(0)
 	}

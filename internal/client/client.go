@@ -9,10 +9,16 @@ import (
 	"github.com/nokka/d2client"
 )
 
-// subscriberRepository is the interface representation of the data layer
-// the service depend on.
+// inmemRepository is the interface representation of the in mem data layer.
+type inmemRepository interface {
+	subscriberRepository
+	Sync(chatID string, subscribers []subscriber.Subscriber) error
+}
+
+// subscriberRepository is the interface representation of the data layer.
 type subscriberRepository interface {
 	FindSubscribers(chatID string) ([]subscriber.Subscriber, error)
+	FindEligibleSubscribers(chatID string) ([]subscriber.Subscriber, error)
 	Subscribe(account string, chatID string) error
 	Unsubscribe(account string, chatID string) error
 }
@@ -24,7 +30,7 @@ type Client struct {
 	password    string
 	decoder     decoder
 	conn        d2client.Client
-	inmem       subscriberRepository
+	inmem       inmemRepository
 	subscribers subscriberRepository
 	publishLock sync.Mutex
 }
@@ -55,6 +61,21 @@ func (c *Client) Open() error {
 	return nil
 }
 
+// Sync ...
+func (c *Client) Sync() error {
+	subscribers, err := c.subscribers.FindSubscribers(c.chatID)
+	if err != nil {
+		return err
+	}
+
+	err = c.inmem.Sync(c.chatID, subscribers)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
 	// Subscribe to persistent store first.
@@ -68,14 +89,6 @@ func (c *Client) Subscribe(message *Message) error {
 	if err != nil {
 		return err
 	}
-
-	a, err := c.inmem.FindSubscribers(c.chatID)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("IN MEM SUBS")
-	fmt.Println(a)
 
 	// Notify subscriber.
 	c.conn.Whisper(message.Account, fmt.Sprintf("[subscribed] %s", c.chatID))
@@ -97,14 +110,6 @@ func (c *Client) Unsubscribe(message *Message) error {
 		return err
 	}
 
-	a, err := c.inmem.FindSubscribers(c.chatID)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("IN MEM SUBS")
-	fmt.Println(a)
-
 	// Notify subscriber.
 	c.conn.Whisper(message.Account, fmt.Sprintf("[unsubscribed] %s", c.chatID))
 
@@ -119,7 +124,7 @@ func (c *Client) Publish(message *Message) error {
 	// Unlock when we're done.
 	defer c.publishLock.Unlock()
 
-	subscribers, err := c.inmem.FindSubscribers(c.chatID)
+	subscribers, err := c.inmem.FindEligibleSubscribers(c.chatID)
 	if err != nil {
 		return err
 	}
@@ -136,7 +141,6 @@ func (c *Client) Publish(message *Message) error {
 		if err != nil {
 			log.Println("failed to deliver message", err)
 		}
-
 	}
 
 	return nil
@@ -192,7 +196,7 @@ func (c *Client) listenAndClose() {
 }
 
 // New ...
-func New(addr string, chatID string, password string, inmem subscriberRepository, subscribers subscriberRepository) *Client {
+func New(addr string, chatID string, password string, inmem inmemRepository, subscribers subscriberRepository) *Client {
 	return &Client{
 		addr:        addr,
 		chatID:      chatID,

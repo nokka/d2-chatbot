@@ -13,8 +13,31 @@ type SubscriberRepository struct {
 
 // FindSubscribers ...
 func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subscriber, error) {
+	results, err := r.db.Query(`SELECT account, online, banned FROM subscribers WHERE chat = ?`, chatID)
+	if err != nil {
+		return nil, err
+	}
+
+	subs := make([]subscriber.Subscriber, 0)
+
+	for results.Next() {
+		var sub subscriber.Subscriber
+
+		err = results.Scan(&sub.Account, &sub.Online, &sub.Banned)
+		if err != nil {
+			return nil, err
+		}
+
+		subs = append(subs, sub)
+	}
+
+	return subs, nil
+}
+
+// FindEligibleSubscribers ...
+func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscriber.Subscriber, error) {
 	results, err := r.db.Query(`
-	SELECT account FROM subscribers
+	SELECT account, online FROM subscribers
 		WHERE chat = ?
 		AND online = true
 		AND banned = false
@@ -28,7 +51,7 @@ func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subs
 	for results.Next() {
 		var sub subscriber.Subscriber
 
-		err = results.Scan(&sub.Account)
+		err = results.Scan(&sub.Account, &sub.Online, &sub.Banned)
 		if err != nil {
 			return nil, err
 		}

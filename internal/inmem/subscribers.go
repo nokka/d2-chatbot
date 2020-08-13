@@ -13,6 +13,23 @@ type SubscriberRepository struct {
 	rwm   sync.RWMutex
 }
 
+// Sync ...
+func (r *SubscriberRepository) Sync(chatID string, subscribers []subscriber.Subscriber) error {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
+	// Make sure chat exists.
+	if _, ok := r.Chats[chatID]; ok {
+		for i, sub := range subscribers {
+			r.Chats[chatID][sub.Account] = subscribers[i]
+		}
+
+		return nil
+	}
+
+	return errors.New("unable to sync, chat not found")
+}
+
 // FindSubscribers ...
 func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subscriber, error) {
 	r.rwm.RLock()
@@ -20,16 +37,33 @@ func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subs
 
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
-		var online []subscriber.Subscriber
+		var subs []subscriber.Subscriber
 		for _, sub := range chat {
-			if sub.Online {
-				online = append(online, sub)
-			}
+			subs = append(subs, sub)
 		}
-		return online, nil
+		return subs, nil
 	}
 
 	return nil, errors.New("failed to find subscribers, chat not found")
+}
+
+// FindEligibleSubscribers ...
+func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscriber.Subscriber, error) {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
+	// Make sure chat exists.
+	if chat, ok := r.Chats[chatID]; ok {
+		var subs []subscriber.Subscriber
+		for _, sub := range chat {
+			if sub.Online && !sub.Banned {
+				subs = append(subs, sub)
+			}
+		}
+		return subs, nil
+	}
+
+	return nil, errors.New("failed to find online subscribers, chat not found")
 }
 
 // Subscribe ...

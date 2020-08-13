@@ -4,4 +4,5 @@ package subscriber
 type Subscriber struct {
 	Account string
 	Online  bool
+	Banned  bool
 }
