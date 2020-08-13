@@ -1,20 +1,26 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/nokka/d2-chatbot/internal/client"
 	"github.com/nokka/d2-chatbot/internal/inmem"
+	"github.com/nokka/d2-chatbot/internal/mysql"
 	"github.com/nokka/d2-chatbot/pkg/env"
 )
 
 func main() {
 	var (
 		serverAddress = env.String("SERVER_ADDRESS", "")
+		mysqlHost     = env.String("MYSQL_HOST", "127.0.0.1:3306")
+		mysqlUser     = env.String("MYSQL_USER", "chat_user")
+		mysqlPw       = env.String("MYSQL_PASSWORD", "")
 		chatUsername  = env.String("CHAT_USERNAME", "chat")
 		chatPassword  = env.String("CHAT_PASSWORD", "")
 		tradeUsername = env.String("TRADE_USERNAME", "trade")
@@ -58,14 +64,33 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Mysql connection.
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/chat", mysqlUser, mysqlPw, mysqlHost)
+	pool, err := sql.Open("mysql", dsn)
+	if err != nil {
+		log.Println("failed to open mysql connection", err)
+		os.Exit(0)
+	}
+
+	err = pool.Ping()
+	if err != nil {
+		log.Println("failed to ping mysql connection", err)
+		os.Exit(0)
+	}
+
+	// Close the pool when we're done.
+	defer pool.Close()
+
 	// Repositories
-	subscriberRepository := inmem.NewRepository()
+	inmemRepository := inmem.NewSubscriberRepository()
+	subscriberRepository := mysql.NewSubscriberRepository(pool)
 
 	// Chat bot connection.
 	chatBot := client.New(
 		serverAddress,
 		chatUsername,
 		chatPassword,
+		inmemRepository,
 		subscriberRepository,
 	)
 
@@ -79,6 +104,7 @@ func main() {
 		serverAddress,
 		tradeUsername,
 		tradePassword,
+		inmemRepository,
 		subscriberRepository,
 	)
 
@@ -92,6 +118,7 @@ func main() {
 		serverAddress,
 		hcUsername,
 		hcPassword,
+		inmemRepository,
 		subscriberRepository,
 	)
 

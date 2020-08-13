@@ -1,7 +1,6 @@
 package client
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -13,9 +12,9 @@ import (
 // subscriberRepository is the interface representation of the data layer
 // the service depend on.
 type subscriberRepository interface {
-	FindSubscribers(ctx context.Context, chatID string) ([]subscriber.Subscriber, error)
-	Subscribe(ctx context.Context, account string, chatID string) error
-	Unsubscribe(ctx context.Context, account string, chatID string) error
+	FindSubscribers(chatID string) ([]subscriber.Subscriber, error)
+	Subscribe(account string, chatID string) error
+	Unsubscribe(account string, chatID string) error
 }
 
 // Client wraps the connection to the d2 server and is responsible for communication.
@@ -25,6 +24,7 @@ type Client struct {
 	password    string
 	decoder     decoder
 	conn        d2client.Client
+	inmem       subscriberRepository
 	subscribers subscriberRepository
 	publishLock sync.Mutex
 }
@@ -57,11 +57,25 @@ func (c *Client) Open() error {
 
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
-	fmt.Println("SUBSCRIBRING", message.Account, c.chatID)
-	err := c.subscribers.Subscribe(context.Background(), message.Account, c.chatID)
+	// Subscribe to persistent store first.
+	err := c.subscribers.Subscribe(message.Account, c.chatID)
 	if err != nil {
 		return err
 	}
+
+	// Subscription persisted, add to in memory db.
+	err = c.inmem.Subscribe(message.Account, c.chatID)
+	if err != nil {
+		return err
+	}
+
+	a, err := c.inmem.FindSubscribers(c.chatID)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("IN MEM SUBS")
+	fmt.Println(a)
 
 	// Notify subscriber.
 	c.conn.Whisper(message.Account, fmt.Sprintf("[subscribed] %s", c.chatID))
@@ -71,10 +85,25 @@ func (c *Client) Subscribe(message *Message) error {
 
 // Unsubscribe ...
 func (c *Client) Unsubscribe(message *Message) error {
-	err := c.subscribers.Unsubscribe(context.Background(), message.Account, c.chatID)
+	// Unsubscribe to persistent store first.
+	err := c.subscribers.Unsubscribe(message.Account, c.chatID)
 	if err != nil {
 		return err
 	}
+
+	// Unubscription persisted, remove it from in memory db.
+	err = c.inmem.Unsubscribe(message.Account, c.chatID)
+	if err != nil {
+		return err
+	}
+
+	a, err := c.inmem.FindSubscribers(c.chatID)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("IN MEM SUBS")
+	fmt.Println(a)
 
 	// Notify subscriber.
 	c.conn.Whisper(message.Account, fmt.Sprintf("[unsubscribed] %s", c.chatID))
@@ -90,7 +119,7 @@ func (c *Client) Publish(message *Message) error {
 	// Unlock when we're done.
 	defer c.publishLock.Unlock()
 
-	subscribers, err := c.subscribers.FindSubscribers(context.Background(), c.chatID)
+	subscribers, err := c.inmem.FindSubscribers(c.chatID)
 	if err != nil {
 		return err
 	}
@@ -163,12 +192,13 @@ func (c *Client) listenAndClose() {
 }
 
 // New ...
-func New(addr string, chatID string, password string, subscribers subscriberRepository) *Client {
+func New(addr string, chatID string, password string, inmem subscriberRepository, subscribers subscriberRepository) *Client {
 	return &Client{
 		addr:        addr,
 		chatID:      chatID,
 		password:    password,
 		decoder:     decoder{},
+		inmem:       inmem,
 		subscribers: subscribers,
 	}
 }

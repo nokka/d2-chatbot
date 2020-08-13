@@ -1,21 +1,20 @@
 package inmem
 
 import (
-	"context"
 	"errors"
 	"sync"
 
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 )
 
-// Repository ...
-type Repository struct {
+// SubscriberRepository ...
+type SubscriberRepository struct {
 	Chats map[string]map[string]subscriber.Subscriber
 	rwm   sync.RWMutex
 }
 
 // FindSubscribers ...
-func (r *Repository) FindSubscribers(ctx context.Context, chatID string) ([]subscriber.Subscriber, error) {
+func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subscriber, error) {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
 
@@ -34,7 +33,7 @@ func (r *Repository) FindSubscribers(ctx context.Context, chatID string) ([]subs
 }
 
 // Subscribe ...
-func (r *Repository) Subscribe(ctx context.Context, account string, chatID string) error {
+func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
 
@@ -56,7 +55,7 @@ func (r *Repository) Subscribe(ctx context.Context, account string, chatID strin
 }
 
 // Unsubscribe ...
-func (r *Repository) Unsubscribe(ctx context.Context, account string, chatID string) error {
+func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
 
@@ -70,9 +69,9 @@ func (r *Repository) Unsubscribe(ctx context.Context, account string, chatID str
 	return nil
 }
 
-// NewRepository ...
-func NewRepository() *Repository {
-	return &Repository{
+// NewSubscriberRepository ...
+func NewSubscriberRepository() *SubscriberRepository {
+	return &SubscriberRepository{
 		Chats: map[string]map[string]subscriber.Subscriber{
 			"chat":  make(map[string]subscriber.Subscriber, 0),
 			"trade": make(map[string]subscriber.Subscriber, 0),
