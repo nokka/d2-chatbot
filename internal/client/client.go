@@ -9,18 +9,18 @@ import (
 	"github.com/nokka/d2client"
 )
 
-// inmemRepository is the interface representation of the in mem data layer.
-type inmemRepository interface {
-	subscriberRepository
-	Sync(chatID string, subscribers []subscriber.Subscriber) error
-}
-
 // subscriberRepository is the interface representation of the data layer.
 type subscriberRepository interface {
 	FindSubscribers(chatID string) ([]subscriber.Subscriber, error)
 	FindEligibleSubscribers(chatID string) ([]subscriber.Subscriber, error)
 	Subscribe(account string, chatID string) error
 	Unsubscribe(account string, chatID string) error
+}
+
+// inmemRepository is the interface representation of the in mem data layer.
+type inmemRepository interface {
+	subscriberRepository
+	Sync(chatID string, subscribers []subscriber.Subscriber) error
 }
 
 // Client wraps the connection to the d2 server and is responsible for communication.
