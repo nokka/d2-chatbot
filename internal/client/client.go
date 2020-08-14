@@ -198,8 +198,11 @@ func (c *Client) subscriberBanned(sub subscriber.Subscriber) bool {
 		remainder := sub.BannedUntil.Sub(time.Now())
 		days := int(remainder.Hours() / 24)
 
-		// Notify subscriber that they are banned.
-		c.conn.Whisper(sub.Account, fmt.Sprintf("[you are banned on %s for %d more days]", c.chatID, days))
+		if days >= 1 {
+			c.conn.Whisper(sub.Account, fmt.Sprintf("[you are banned on %s for %d more days]", c.chatID, days))
+		} else {
+			c.conn.Whisper(sub.Account, fmt.Sprintf("[you are banned on %s for %d more hours]", c.chatID, int(remainder.Hours())))
+		}
 
 		return true
 	}
