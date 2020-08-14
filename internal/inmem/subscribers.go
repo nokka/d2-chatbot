@@ -3,6 +3,7 @@ package inmem
 import (
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 )
@@ -73,7 +74,8 @@ func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscri
 	if chat, ok := r.Chats[chatID]; ok {
 		var subs []subscriber.Subscriber
 		for _, sub := range chat {
-			if sub.Online && sub.BannedUntil == nil {
+			// The subscriber is eligible for messages if they're both online and not currently banned.
+			if sub.Online && (sub.BannedUntil == nil || sub.BannedUntil.Before(time.Now())) {
 				subs = append(subs, sub)
 			}
 		}

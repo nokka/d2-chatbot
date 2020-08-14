@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 	"github.com/nokka/d2client"
@@ -80,10 +81,15 @@ func (c *Client) Sync() error {
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
 	// Check in memory store if the account is subscribed.
-	existingSubscriber := c.inmem.FindSubscriber(message.Account, c.chatID)
+	sub := c.inmem.FindSubscriber(message.Account, c.chatID)
+
+	// Cancel the operation if subscriber is banned.
+	if sub != nil && c.subscriberBanned(*sub) {
+		return nil
+	}
 
 	// Subscriber didn't exist, persist them.
-	if existingSubscriber == nil {
+	if sub == nil {
 		// Subscribe to persistent store first.
 		err := c.subscribers.Subscribe(message.Account, c.chatID)
 		if err != nil {
@@ -111,10 +117,14 @@ func (c *Client) Subscribe(message *Message) error {
 // Unsubscribe ...
 func (c *Client) Unsubscribe(message *Message) error {
 	// Check in memory store if the account is subscribed.
-	existingSubscriber := c.inmem.FindSubscriber(message.Account, c.chatID)
-
-	if existingSubscriber == nil {
+	sub := c.inmem.FindSubscriber(message.Account, c.chatID)
+	if sub == nil {
 		c.conn.Whisper(message.Account, fmt.Sprintf("[not subscribed to %s]", c.chatID))
+		return nil
+	}
+
+	// Cancel the operation if subscriber is banned.
+	if banned := c.subscriberBanned(*sub); banned {
 		return nil
 	}
 
@@ -144,6 +154,18 @@ func (c *Client) Publish(message *Message) error {
 	// Unlock when we're done.
 	defer c.publishLock.Unlock()
 
+	// Check in memory store if the account is subscribed to the chat.
+	sub := c.inmem.FindSubscriber(message.Account, c.chatID)
+	if sub == nil {
+		c.conn.Whisper(message.Account, fmt.Sprintf("[not subscribed to %s]", c.chatID))
+		return nil
+	}
+
+	// Cancel the operation if subscriber is banned.
+	if banned := c.subscriberBanned(*sub); banned {
+		return nil
+	}
+
 	subscribers, err := c.inmem.FindEligibleSubscribers(c.chatID)
 	if err != nil {
 		return err
@@ -164,6 +186,25 @@ func (c *Client) Publish(message *Message) error {
 	}
 
 	return nil
+}
+
+func (c *Client) subscriberBanned(sub subscriber.Subscriber) bool {
+	if sub.BannedUntil == nil {
+		return false
+	}
+
+	if sub.BannedUntil.After(time.Now()) {
+		// Calculate days left on ban.
+		remainder := sub.BannedUntil.Sub(time.Now())
+		days := int(remainder.Hours() / 24)
+
+		// Notify subscriber that they are banned.
+		c.conn.Whisper(sub.Account, fmt.Sprintf("[you are banned on %s for %d more days]", c.chatID, days))
+
+		return true
+	}
+
+	return false
 }
 
 func (c *Client) listenAndClose() {

@@ -40,7 +40,7 @@ func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscri
 	SELECT account, online FROM subscribers
 		WHERE chat = ?
 		AND online = true
-		AND banned_until IS NULL
+		AND (banned_until IS NULL OR banned_until <= NOW())
 		`, chatID)
 	if err != nil {
 		return nil, err

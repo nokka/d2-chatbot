@@ -65,7 +65,7 @@ func main() {
 	}
 
 	// Mysql connection.
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/chat", mysqlUser, mysqlPw, mysqlHost)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/chat?parseTime=true", mysqlUser, mysqlPw, mysqlHost)
 	pool, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Println("failed to open mysql connection", err)
