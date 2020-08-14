@@ -96,13 +96,13 @@ func main() {
 
 	// Sync the chat bot in memory store with the persistent store.
 	if err := cb.Sync(); err != nil {
-		log.Println("failed to sync chat data")
+		log.Println("failed to sync chat data", err)
 		os.Exit(0)
 	}
 
 	// Make sure the sync has run before we open for incoming traffic.
 	if err := cb.Open(); err != nil {
-		log.Println("failed to open chat connection")
+		log.Println("failed to open chat connection", err)
 		os.Exit(0)
 	}
 
@@ -117,13 +117,13 @@ func main() {
 
 	// Sync the trade bot in memory store with the persistent store.
 	if err := tb.Sync(); err != nil {
-		log.Println("failed to sync trade data")
+		log.Println("failed to sync trade data", err)
 		os.Exit(0)
 	}
 
 	// Make sure the sync has run before we open for incoming traffic.
 	if err := tb.Open(); err != nil {
-		log.Println("failed to open trade connection")
+		log.Println("failed to open trade connection", err)
 		os.Exit(0)
 	}
 
@@ -138,13 +138,13 @@ func main() {
 
 	// Sync the hc bot in memory store with the persistent store.
 	if err := hc.Sync(); err != nil {
-		log.Println("failed to sync hc data")
+		log.Println("failed to sync hc data", err)
 		os.Exit(0)
 	}
 
 	// Make sure the sync has run before we open for incoming traffic.
 	if err := hc.Open(); err != nil {
-		log.Println("failed to open hc connection")
+		log.Println("failed to open hc connection", err)
 		os.Exit(0)
 	}
 

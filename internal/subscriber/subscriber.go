@@ -1,8 +1,10 @@
 package subscriber
 
+import "time"
+
 // Subscriber ...
 type Subscriber struct {
-	Account string
-	Online  bool
-	Banned  bool
+	Account     string
+	Online      bool
+	BannedUntil *time.Time
 }

@@ -21,6 +21,7 @@ type subscriberRepository interface {
 type inmemRepository interface {
 	subscriberRepository
 	Sync(chatID string, subscribers []subscriber.Subscriber) error
+	FindSubscriber(account string, chatID string) *subscriber.Subscriber
 }
 
 // Client wraps the connection to the d2 server and is responsible for communication.
@@ -78,26 +79,45 @@ func (c *Client) Sync() error {
 
 // Subscribe ...
 func (c *Client) Subscribe(message *Message) error {
-	// Subscribe to persistent store first.
-	err := c.subscribers.Subscribe(message.Account, c.chatID)
-	if err != nil {
-		return err
+	// Check in memory store if the account is subscribed.
+	existingSubscriber := c.inmem.FindSubscriber(message.Account, c.chatID)
+
+	// Subscriber didn't exist, persist them.
+	if existingSubscriber == nil {
+		// Subscribe to persistent store first.
+		err := c.subscribers.Subscribe(message.Account, c.chatID)
+		if err != nil {
+			return err
+		}
+
+		// Subscription persisted, add to in memory db.
+		err = c.inmem.Subscribe(message.Account, c.chatID)
+		if err != nil {
+			return err
+		}
+
+		// Notify subscriber that they have been successfully subscribed.
+		c.conn.Whisper(message.Account, fmt.Sprintf("[subscribed %s]", c.chatID))
+
+		return nil
 	}
 
-	// Subscription persisted, add to in memory db.
-	err = c.inmem.Subscribe(message.Account, c.chatID)
-	if err != nil {
-		return err
-	}
-
-	// Notify subscriber.
-	c.conn.Whisper(message.Account, fmt.Sprintf("[subscribed] %s", c.chatID))
+	// Notify subscriber that they are already subscribed.
+	c.conn.Whisper(message.Account, fmt.Sprintf("[already subscribed to %s] ", c.chatID))
 
 	return nil
 }
 
 // Unsubscribe ...
 func (c *Client) Unsubscribe(message *Message) error {
+	// Check in memory store if the account is subscribed.
+	existingSubscriber := c.inmem.FindSubscriber(message.Account, c.chatID)
+
+	if existingSubscriber == nil {
+		c.conn.Whisper(message.Account, fmt.Sprintf("[not subscribed to %s]", c.chatID))
+		return nil
+	}
+
 	// Unsubscribe to persistent store first.
 	err := c.subscribers.Unsubscribe(message.Account, c.chatID)
 	if err != nil {
@@ -169,7 +189,9 @@ func (c *Client) listenAndClose() {
 					err := c.Subscribe(decoded)
 					if err != nil {
 						log.Printf("failed to subscribe %s", err)
+						c.conn.Whisper(decoded.Account, fmt.Sprintf("failed to subscribe, try again later"))
 					}
+
 				case TypeUnsubscribe:
 					err := c.Unsubscribe(decoded)
 					if err != nil {
