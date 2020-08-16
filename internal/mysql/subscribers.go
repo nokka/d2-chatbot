@@ -86,6 +86,18 @@ func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error 
 	return nil
 }
 
+// UpdateOnlineStatus ...
+func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) error {
+	result, err := r.db.Query(`UPDATE subscribers set online = ? WHERE account = ?;`, online, account)
+	if err != nil {
+		return err
+	}
+
+	defer result.Close()
+
+	return nil
+}
+
 // NewSubscriberRepository ...
 func NewSubscriberRepository(db *sql.DB) *SubscriberRepository {
 	return &SubscriberRepository{

@@ -13,4 +13,4 @@ online BOOLEAN NOT NULL DEFAULT TRUE,
 banned_until TIMESTAMP,
 subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 PRIMARY KEY(account, chat)
-)
+);

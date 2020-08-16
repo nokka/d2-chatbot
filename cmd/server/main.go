@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/nokka/d2-chatbot/internal/bnetd"
 	"github.com/nokka/d2-chatbot/internal/client"
 	"github.com/nokka/d2-chatbot/internal/inmem"
 	"github.com/nokka/d2-chatbot/internal/mysql"
@@ -27,6 +28,7 @@ func main() {
 		tradePassword = env.String("TRADE_PASSWORD", "")
 		hcUsername    = env.String("HC_USERNAME", "hc")
 		hcPassword    = env.String("HC_PASSWORD", "")
+		bnetdLog      = env.String("BNETD_LOG", "")
 	)
 
 	if serverAddress == "" {
@@ -145,6 +147,20 @@ func main() {
 	// Make sure the sync has run before we open for incoming traffic.
 	if err := hc.Open(); err != nil {
 		log.Println("failed to open hc connection", err)
+		os.Exit(0)
+	}
+
+	// Open file watcher for bnetd.log to listen for changes in subscribers online state.
+	w := bnetd.NewWatcher(
+		bnetdLog,
+		inmemRepository,
+		subscriberRepository,
+	)
+
+	// Start watching for changes on the bnetd log.
+	err = w.Start()
+	if err != nil {
+		log.Println("failed to open bnetd.log watcher", err)
 		os.Exit(0)
 	}
 

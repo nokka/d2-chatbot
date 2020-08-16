@@ -122,6 +122,36 @@ func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error 
 	return nil
 }
 
+// UpdateOnlineStatus ...
+func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) error {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
+	// Search through all chats to find the subscriber in any of them.
+	for _, chat := range r.Chats {
+		if subscriber, ok := chat[account]; ok {
+			subscriber.Online = online
+		}
+	}
+
+	return nil
+}
+
+// SubscriberExists ...
+func (r *SubscriberRepository) SubscriberExists(account string) bool {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
+	// Search through all chats to find the subscriber in any of them.
+	for _, chat := range r.Chats {
+		if _, ok := chat[account]; ok {
+			return true
+		}
+	}
+
+	return false
+}
+
 // NewSubscriberRepository ...
 func NewSubscriberRepository() *SubscriberRepository {
 	return &SubscriberRepository{

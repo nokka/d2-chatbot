@@ -141,7 +141,7 @@ func (c *Client) Unsubscribe(message *Message) error {
 	}
 
 	// Notify subscriber.
-	c.conn.Whisper(message.Account, fmt.Sprintf("[unsubscribed] %s", c.chatID))
+	c.conn.Whisper(message.Account, fmt.Sprintf("[unsubscribed %s]", c.chatID))
 
 	return nil
 }
@@ -233,7 +233,6 @@ func (c *Client) listenAndClose() {
 					err := c.Subscribe(decoded)
 					if err != nil {
 						log.Printf("failed to subscribe %s", err)
-						c.conn.Whisper(decoded.Account, fmt.Sprintf("failed to subscribe, try again later"))
 					}
 
 				case TypeUnsubscribe:
