@@ -157,12 +157,21 @@ func main() {
 		subscriberRepository,
 	)
 
-	// Start watching for changes on the bnetd log.
-	err = w.Start()
-	if err != nil {
-		log.Println("failed to open bnetd.log watcher", err)
-		os.Exit(0)
-	}
+	// Start bnetd watcher and receive errors.
+	go func() {
+		errChan, err := w.Start()
+		if err != nil {
+			log.Println("failed to open bnetd.log watcher", err)
+			os.Exit(0)
+		}
+
+		for {
+			select {
+			case err := <-errChan:
+				log.Println(err)
+			}
+		}
+	}()
 
 	// Channel to receive errors on.
 	errorChannel := make(chan error)

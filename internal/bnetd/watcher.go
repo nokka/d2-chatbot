@@ -3,7 +3,6 @@ package bnetd
 import (
 	"bufio"
 	"io"
-	"log"
 	"os"
 
 	"gopkg.in/fsnotify.v1"
@@ -30,25 +29,27 @@ type Watcher struct {
 }
 
 // Start will start listening for updates to the file.
-func (w *Watcher) Start() error {
+func (w *Watcher) Start() (<-chan error, error) {
 	// Open the file we're supposed to listen on.
 	file, err := os.Open(w.filePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Create a new file watcher using fsnotify to get updates
 	// on when the file is being written to by the OS.
 	fw, err := fsnotify.NewWatcher()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Add the fsnotify watcher to the list of watchers.
 	err = fw.Add(w.filePath)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	errorChan := make(chan error)
 
 	// Start on another thread not to block main.
 	go func(file *os.File, fw *fsnotify.Watcher) {
@@ -63,14 +64,14 @@ func (w *Watcher) Start() error {
 		for {
 			line, err := r.ReadBytes('\n')
 			if err != nil && err != io.EOF {
-				log.Println(err)
+				errorChan <- err
 				continue
 			}
 
 			if w.ready {
 				err := w.CheckForUpdates(line)
 				if err != nil {
-					log.Println(err)
+					errorChan <- err
 					continue
 				}
 			}
@@ -83,13 +84,13 @@ func (w *Watcher) Start() error {
 
 			// We got EOF so let's wait for changes.
 			if err = w.waitForChange(fw); err != nil {
-				log.Println(err)
+				errorChan <- err
 				continue
 			}
 		}
 	}(file, fw)
 
-	return nil
+	return errorChan, nil
 }
 
 // CheckForUpdates ...
@@ -112,7 +113,6 @@ func (w *Watcher) CheckForUpdates(data []byte) error {
 	}
 
 	return nil
-
 }
 
 func (w *Watcher) waitForChange(fw *fsnotify.Watcher) error {

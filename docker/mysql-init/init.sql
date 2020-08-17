@@ -10,7 +10,7 @@ CREATE TABLE chat.subscribers (
 account VARCHAR(50) NOT NULL,
 chat VARCHAR(15) NOT NULL,
 online BOOLEAN NOT NULL DEFAULT TRUE,
-banned_until TIMESTAMP,
+banned_until TIMESTAMP NULL,
 subscribed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 PRIMARY KEY(account, chat)
 );
