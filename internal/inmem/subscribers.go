@@ -94,7 +94,7 @@ func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
 	if chat, ok := r.Chats[chatID]; ok {
 		// If we can't find the subscriber, add it.
 		if _, ok := chat[account]; !ok {
-			chat[account] = subscriber.Subscriber{
+			r.Chats[chatID][account] = subscriber.Subscriber{
 				Account: account,
 				// Default to online true since a user need to be online to subscribe.
 				Online: true,
@@ -128,9 +128,10 @@ func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) e
 	defer r.rwm.RUnlock()
 
 	// Search through all chats to find the subscriber in any of them.
-	for _, chat := range r.Chats {
+	for id, chat := range r.Chats {
 		if subscriber, ok := chat[account]; ok {
 			subscriber.Online = online
+			r.Chats[id][account] = subscriber
 		}
 	}
 
