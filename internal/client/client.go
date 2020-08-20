@@ -200,8 +200,6 @@ func (c *Client) Ban(message *Message) error {
 		return err
 	}
 
-	fmt.Println(mods)
-
 	var allowed bool
 	for _, mod := range mods {
 		if message.Account == mod {
@@ -248,10 +246,6 @@ func (c *Client) Ban(message *Message) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: REMOVE
-	s, _ := c.inmem.FindSubscribers(c.chatID)
-	fmt.Println(s)
 
 	// Notify moderator that the ban was complete.
 	c.conn.Whisper(message.Account, fmt.Sprintf("[%s has been banned from %s until %v]", account, c.chatID, until))

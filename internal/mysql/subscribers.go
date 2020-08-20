@@ -19,6 +19,8 @@ func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subs
 		return nil, err
 	}
 
+	defer results.Close()
+
 	subs := make([]subscriber.Subscriber, 0)
 
 	for results.Next() {
@@ -46,6 +48,8 @@ func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscri
 	if err != nil {
 		return nil, err
 	}
+
+	defer results.Close()
 
 	subs := make([]subscriber.Subscriber, 0)
 
@@ -117,6 +121,8 @@ func (r *SubscriberRepository) FindModerators() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	defer results.Close()
 
 	mods := make([]string, 0)
 
