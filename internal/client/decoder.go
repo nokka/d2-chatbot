@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 // Compile the regex once.
@@ -54,7 +55,7 @@ func (d decoder) Decode(data []byte) (*Message, bool) {
 	}
 
 	message := &Message{
-		Account: matches[account],
+		Account: strings.ToLower(matches[account]),
 		Cmd:     matches[cmd],
 	}
 
