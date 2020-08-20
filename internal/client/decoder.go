@@ -6,7 +6,7 @@ import (
 )
 
 // Compile the regex once.
-var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!]{1})\s*([a-z .:,_\-'"!?]+)?`)
+var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!\~]{1})\s*([a-z .:,_\-'"!?0-9]+)?`)
 
 // Decoder ...
 type decoder struct{}
@@ -17,6 +17,7 @@ const (
 	TypeSubscribe   = "@"
 	TypeUnsubscribe = "!"
 	TypePublish     = "#"
+	TypeBan         = "~"
 
 	// Indices.
 	account = 1
@@ -29,6 +30,7 @@ var cmds = map[string]struct{}{
 	TypeSubscribe:   {},
 	TypePublish:     {},
 	TypeUnsubscribe: {},
+	TypeBan:         {},
 }
 
 // Message ...
@@ -56,8 +58,11 @@ func (d decoder) Decode(data []byte) (*Message, bool) {
 		Cmd:     matches[cmd],
 	}
 
-	if message.Cmd == TypePublish {
+	switch message.Cmd {
+	case TypePublish:
 		message.Message = fmt.Sprintf("[%s] %s", matches[account], matches[msg])
+	case TypeBan:
+		message.Message = matches[msg]
 	}
 
 	return message, true

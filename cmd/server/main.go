@@ -87,6 +87,15 @@ func main() {
 	inmemRepository := inmem.NewSubscriberRepository()
 	subscriberRepository := mysql.NewSubscriberRepository(pool)
 
+	// Get moderators to sync.
+	mods, err := subscriberRepository.FindModerators()
+	if err != nil {
+		log.Println("failed to sync moderators")
+		os.Exit(0)
+	}
+
+	inmemRepository.SyncModerators(mods)
+
 	// Chat bot connection.
 	cb := client.New(
 		serverAddress,

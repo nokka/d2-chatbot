@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 )
@@ -96,6 +97,41 @@ func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) e
 	defer result.Close()
 
 	return nil
+}
+
+// UpdateBannedUntil ...
+func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, until *time.Time) error {
+	result, err := r.db.Query(`UPDATE subscribers set banned_until = ? WHERE account = ? AND chat = ?;`, until, account, chatID)
+	if err != nil {
+		return err
+	}
+
+	defer result.Close()
+
+	return nil
+}
+
+// FindModerators ...
+func (r *SubscriberRepository) FindModerators() ([]string, error) {
+	results, err := r.db.Query(`SELECT account FROM moderators`)
+	if err != nil {
+		return nil, err
+	}
+
+	mods := make([]string, 0)
+
+	for results.Next() {
+		var mod string
+
+		err = results.Scan(&mod)
+		if err != nil {
+			return nil, err
+		}
+
+		mods = append(mods, mod)
+	}
+
+	return mods, nil
 }
 
 // NewSubscriberRepository ...

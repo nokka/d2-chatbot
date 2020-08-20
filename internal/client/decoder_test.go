@@ -57,6 +57,16 @@ func TestDecode(t *testing.T) {
 			input: []byte("<from nokka> random message that won't get through"),
 			valid: false,
 		},
+		{
+			name:  "valid ban",
+			input: []byte("<from nokka> ~ cheatingaccount 5"),
+			msg: &Message{
+				Account: "nokka",
+				Cmd:     TypeBan,
+				Message: "cheatingaccount 5",
+			},
+			valid: true,
+		},
 	}
 
 	for _, tt := range tests {

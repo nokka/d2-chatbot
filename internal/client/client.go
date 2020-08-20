@@ -3,6 +3,8 @@ package client
 import (
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,12 +18,14 @@ type subscriberRepository interface {
 	FindEligibleSubscribers(chatID string) ([]subscriber.Subscriber, error)
 	Subscribe(account string, chatID string) error
 	Unsubscribe(account string, chatID string) error
+	UpdateBannedUntil(account string, chatID string, until *time.Time) error
+	FindModerators() ([]string, error)
 }
 
 // inmemRepository is the interface representation of the in mem data layer.
 type inmemRepository interface {
 	subscriberRepository
-	Sync(chatID string, subscribers []subscriber.Subscriber) error
+	SyncSubscribers(chatID string, subscribers []subscriber.Subscriber) error
 	FindSubscriber(account string, chatID string) *subscriber.Subscriber
 }
 
@@ -70,7 +74,7 @@ func (c *Client) Sync() error {
 		return err
 	}
 
-	err = c.inmem.Sync(c.chatID, subscribers)
+	err = c.inmem.SyncSubscribers(c.chatID, subscribers)
 	if err != nil {
 		return err
 	}
@@ -180,10 +184,80 @@ func (c *Client) Publish(message *Message) error {
 		}
 
 		err := c.conn.Whisper(sub.Account, message.Message)
+		// If there's an error, log it and continue with the next message.
 		if err != nil {
 			log.Println("failed to deliver message", err)
 		}
 	}
+
+	return nil
+}
+
+// Ban ...
+func (c *Client) Ban(message *Message) error {
+	mods, err := c.inmem.FindModerators()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(mods)
+
+	var allowed bool
+	for _, mod := range mods {
+		if message.Account == mod {
+			allowed = true
+			break
+		}
+	}
+
+	if !allowed {
+		c.conn.Whisper(message.Account, "[insufficient privileges]")
+		return nil
+	}
+
+	// Extract account to ban and days to ban from message.
+	parts := strings.Split(message.Message, " ")
+
+	if len(parts) < 2 {
+		return fmt.Errorf("failed to extract data when banning, message: %s", message.Message)
+	}
+
+	account := parts[0]
+	days, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return err
+	}
+
+	until := time.Now().AddDate(0, 0, days)
+
+	// Check in memory store if the account is subscribed to the chat.
+	sub := c.inmem.FindSubscriber(account, c.chatID)
+	if sub == nil {
+		c.conn.Whisper(message.Account, fmt.Sprintf("[%s not subscribed to %s]", account, c.chatID))
+		return nil
+	}
+
+	// Subscriber exists, ban them.
+	err = c.subscribers.UpdateBannedUntil(account, c.chatID, &until)
+	if err != nil {
+		return err
+	}
+
+	// Ban persisted, update inmem store.
+	err = c.inmem.UpdateBannedUntil(account, c.chatID, &until)
+	if err != nil {
+		return err
+	}
+
+	// TODO: REMOVE
+	s, _ := c.inmem.FindSubscribers(c.chatID)
+	fmt.Println(s)
+
+	// Notify moderator that the ban was complete.
+	c.conn.Whisper(message.Account, fmt.Sprintf("[%s has been banned from %s until %v]", account, c.chatID, until))
+
+	// Notify subscriber that they have been banned.
+	c.conn.Whisper(account, fmt.Sprintf("[you have been banned from %s until %v]", c.chatID, until))
 
 	return nil
 }
@@ -248,6 +322,11 @@ func (c *Client) listenAndClose() {
 							log.Printf("failed to publish %s", err)
 						}
 					}()
+				case TypeBan:
+					err := c.Ban(decoded)
+					if err != nil {
+						log.Printf("failed to ban %s", err)
+					}
 				default:
 					log.Printf("unknown cmd received: %s", decoded.Cmd)
 				}

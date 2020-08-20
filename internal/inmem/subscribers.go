@@ -10,12 +10,13 @@ import (
 
 // SubscriberRepository ...
 type SubscriberRepository struct {
-	Chats map[string]map[string]subscriber.Subscriber
-	rwm   sync.RWMutex
+	Chats      map[string]map[string]subscriber.Subscriber
+	Moderators []string
+	rwm        sync.RWMutex
 }
 
-// Sync ...
-func (r *SubscriberRepository) Sync(chatID string, subscribers []subscriber.Subscriber) error {
+// SyncSubscribers ...
+func (r *SubscriberRepository) SyncSubscribers(chatID string, subscribers []subscriber.Subscriber) error {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
 
@@ -29,6 +30,14 @@ func (r *SubscriberRepository) Sync(chatID string, subscribers []subscriber.Subs
 	}
 
 	return errors.New("unable to sync, chat not found")
+}
+
+// SyncModerators ...
+func (r *SubscriberRepository) SyncModerators(moderators []string) {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
+	r.Moderators = moderators
 }
 
 // FindSubscriber ...
@@ -153,6 +162,30 @@ func (r *SubscriberRepository) SubscriberExists(account string) bool {
 	return false
 }
 
+// UpdateBannedUntil ...
+func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, until *time.Time) error {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
+
+	// Make sure chat exists.
+	if chat, ok := r.Chats[chatID]; ok {
+		// Make sure subscriber exists.
+		if subscriber, ok := chat[account]; ok {
+			subscriber.BannedUntil = until
+			r.Chats[chatID][account] = subscriber
+		}
+	} else {
+		return errors.New("failed to ban subscriber, chat id doesn't exist")
+	}
+
+	return nil
+}
+
+// FindModerators ...
+func (r *SubscriberRepository) FindModerators() ([]string, error) {
+	return r.Moderators, nil
+}
+
 // NewSubscriberRepository ...
 func NewSubscriberRepository() *SubscriberRepository {
 	return &SubscriberRepository{
@@ -161,5 +194,6 @@ func NewSubscriberRepository() *SubscriberRepository {
 			"trade": make(map[string]subscriber.Subscriber, 0),
 			"hc":    make(map[string]subscriber.Subscriber, 0),
 		},
+		Moderators: make([]string, 0),
 	}
 }
