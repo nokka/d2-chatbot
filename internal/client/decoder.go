@@ -7,7 +7,7 @@ import (
 )
 
 // Compile the regex once.
-var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!\~]{1})\s*([a-z .:,_\-'"!?0-9]+)?`)
+var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!\~]{1})\s*([a-z .:;,_\-\/|&%\\'()"!?<>0-9]+)?`)
 
 // Decoder ...
 type decoder struct{}

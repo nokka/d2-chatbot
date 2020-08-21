@@ -48,6 +48,16 @@ func TestDecode(t *testing.T) {
 			valid: true,
 		},
 		{
+			name:  "valid publish with special characters",
+			input: []byte("<from nokka> # hello there!yo;_; _> test/&ader>...//derp bu | && > (() t ;>"),
+			msg: &Message{
+				Account: "nokka",
+				Cmd:     TypePublish,
+				Message: "[nokka] hello there!yo;_; _> test/&ader>...//derp bu | && > (() t ;>",
+			},
+			valid: true,
+		},
+		{
 			name:  "invalid publish",
 			input: []byte("<from nokka> pub"),
 			valid: false,
