@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/nokka/d2-chatbot/internal/bnetd"
@@ -182,6 +184,13 @@ func main() {
 		}
 	}()
 
+	go func() {
+		for {
+			printMemUsage()
+			time.Sleep(60 * time.Minute)
+		}
+	}()
+
 	// Channel to receive errors on.
 	errorChannel := make(chan error)
 
@@ -197,4 +206,23 @@ func main() {
 		log.Println(err)
 		os.Exit(1)
 	}
+}
+
+// PrintMemUsage outputs the current, total and OS memory being used. As well as the number
+// of garage collection cycles completed.
+// For more info on the stats read docs at: https://golang.org/pkg/runtime/#MemStats
+func printMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Println("-------------------------------------------")
+	fmt.Printf("heap allocation = %v MB\n", bToMb(m.Alloc))
+	fmt.Printf("total alloc = %v MB\n", bToMb(m.TotalAlloc))
+	fmt.Printf("total obtained from os = %v MB\n", bToMb(m.Sys))
+	fmt.Printf("gc cycles = %v\n", m.NumGC)
+	fmt.Printf("go routines = %v\n", runtime.NumGoroutine())
+	fmt.Println("-------------------------------------------")
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }
