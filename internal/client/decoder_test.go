@@ -49,11 +49,31 @@ func TestDecode(t *testing.T) {
 		},
 		{
 			name:  "valid publish with special characters",
-			input: []byte("<from nokka> # hello there!yo;_; _> test/&ader>...//derp bu | && > (() t ;>"),
+			input: []byte("<from nokka> # hello there!yo;_; _> test/&ader>...//derp bu@ | && > (() t ;>"),
 			msg: &Message{
 				Account: "nokka",
 				Cmd:     TypePublish,
-				Message: "[nokka] hello there!yo;_; _> test/&ader>...//derp bu | && > (() t ;>",
+				Message: "[nokka] hello there!yo;_; _> test/&ader>...//derp bu@ | && > (() t ;>",
+			},
+			valid: true,
+		},
+		{
+			name:  "valid publish remove IP address",
+			input: []byte("<from nokka> # hello there 118.99.81.204"),
+			msg: &Message{
+				Account: "nokka",
+				Cmd:     TypePublish,
+				Message: "[nokka] hello there ",
+			},
+			valid: true,
+		},
+		{
+			name:  "valid publish remove IP address in the middle",
+			input: []byte("<from nokka> # hello there 82.254.181.210 how are you?"),
+			msg: &Message{
+				Account: "nokka",
+				Cmd:     TypePublish,
+				Message: "[nokka] hello there  how are you?",
 			},
 			valid: true,
 		},
