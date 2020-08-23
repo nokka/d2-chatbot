@@ -168,21 +168,12 @@ func main() {
 		subscriberRepository,
 	)
 
-	// Start bnetd watcher and receive errors.
-	go func() {
-		errChan, err := w.Start()
-		if err != nil {
-			log.Println("failed to open bnetd.log watcher", err)
-			os.Exit(0)
-		}
-
-		for {
-			select {
-			case err := <-errChan:
-				log.Println(err)
-			}
-		}
-	}()
+	// Start bnetd watcher.
+	err = w.Start()
+	if err != nil {
+		log.Println("failed to open bnetd.log watcher", err)
+		os.Exit(0)
+	}
 
 	go func() {
 		for {
@@ -216,9 +207,6 @@ func printMemUsage() {
 	runtime.ReadMemStats(&m)
 	fmt.Println("-------------------------------------------")
 	fmt.Printf("heap allocation = %v MB\n", bToMb(m.Alloc))
-	fmt.Printf("total alloc = %v MB\n", bToMb(m.TotalAlloc))
-	fmt.Printf("total obtained from os = %v MB\n", bToMb(m.Sys))
-	fmt.Printf("gc cycles = %v\n", m.NumGC)
 	fmt.Printf("go routines = %v\n", runtime.NumGoroutine())
 	fmt.Println("-------------------------------------------")
 }

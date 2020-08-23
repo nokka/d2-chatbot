@@ -24,8 +24,8 @@ const (
 )
 
 // Decode ...
-func (d decoder) Decode(data []byte) (*StatusChange, bool) {
-	matches := r.FindStringSubmatch(string(data))
+func (d decoder) Decode(data string) (*StatusChange, bool) {
+	matches := r.FindStringSubmatch(data)
 
 	if len(matches) != 3 {
 		return nil, false
