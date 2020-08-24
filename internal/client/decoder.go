@@ -7,7 +7,7 @@ import (
 )
 
 // Compile the regex once.
-var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!\~]{1})\s*([a-z .:;,_\-\/|&%\\'()"!@?<>0-9]+)?`)
+var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!\~]{1})\s*(.+)?`)
 
 // IP address regex to remove sensitive information.
 var ipregx = regexp.MustCompile(`(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}`)
@@ -63,7 +63,7 @@ func (d decoder) Decode(data []byte) (*Message, bool) {
 	}
 
 	// Clean up message from IP address that can accidentally
-	// gets appended by bnalias commands such as '%r'.
+	// get appended by bnalias commands such as '%r'.
 	processed := ipregx.ReplaceAllString(matches[msg], "")
 
 	switch message.Cmd {
