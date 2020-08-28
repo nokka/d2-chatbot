@@ -47,10 +47,8 @@ func (r *SubscriberRepository) FindSubscriber(account string, chatID string) *su
 
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
-		for _, sub := range chat {
-			if sub.Account == account {
-				return &sub
-			}
+		if sub, exists := chat[account]; exists {
+			return &sub
 		}
 	}
 

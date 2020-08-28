@@ -33,7 +33,7 @@ func (d decoder) Decode(data string) (*StatusChange, bool) {
 
 	var online bool
 	switch matches[action] {
-	case "logged in":
+	case "logged in", "bot log":
 		online = true
 	case "logged out":
 		online = false
