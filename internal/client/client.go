@@ -221,7 +221,7 @@ func (c *Client) Ban(message *Message) error {
 	}
 
 	account := parts[0]
-	days, err := strconv.Atoi(parts[1])
+	days, err := strconv.Atoi(strings.TrimSuffix(parts[1], "\r"))
 	if err != nil {
 		return err
 	}

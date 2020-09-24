@@ -89,7 +89,7 @@ func TestDecode(t *testing.T) {
 		},
 		{
 			name:  "valid ban",
-			input: []byte("<from nokka> ~ cheatingaccount 5"),
+			input: []byte("<from nokka> ~ nokka_bo 25"),
 			msg: &Message{
 				Account: "nokka",
 				Cmd:     TypeBan,
