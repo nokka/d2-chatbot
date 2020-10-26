@@ -17,8 +17,8 @@ type SubscriberRepository struct {
 
 // SyncSubscribers ...
 func (r *SubscriberRepository) SyncSubscribers(chatID string, subscribers []subscriber.Subscriber) error {
-	r.rwm.RLock()
-	defer r.rwm.RUnlock()
+	r.rwm.Lock()
+	defer r.rwm.Unlock()
 
 	// Make sure chat exists.
 	if _, ok := r.Chats[chatID]; ok {
@@ -34,8 +34,8 @@ func (r *SubscriberRepository) SyncSubscribers(chatID string, subscribers []subs
 
 // SyncModerators ...
 func (r *SubscriberRepository) SyncModerators(moderators []string) {
-	r.rwm.RLock()
-	defer r.rwm.RUnlock()
+	r.rwm.Lock()
+	defer r.rwm.Unlock()
 
 	r.Moderators = moderators
 }
@@ -94,8 +94,8 @@ func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscri
 
 // Subscribe ...
 func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
-	r.rwm.RLock()
-	defer r.rwm.RUnlock()
+	r.rwm.Lock()
+	defer r.rwm.Unlock()
 
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
@@ -116,8 +116,8 @@ func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
 
 // Unsubscribe ...
 func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error {
-	r.rwm.RLock()
-	defer r.rwm.RUnlock()
+	r.rwm.Lock()
+	defer r.rwm.Unlock()
 
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
@@ -131,8 +131,8 @@ func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error 
 
 // UpdateOnlineStatus ...
 func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) error {
-	r.rwm.RLock()
-	defer r.rwm.RUnlock()
+	r.rwm.Lock()
+	defer r.rwm.Unlock()
 
 	// Search through all chats to find the subscriber in any of them.
 	for id, chat := range r.Chats {
@@ -162,8 +162,8 @@ func (r *SubscriberRepository) SubscriberExists(account string) bool {
 
 // UpdateBannedUntil ...
 func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, until *time.Time) error {
-	r.rwm.RLock()
-	defer r.rwm.RUnlock()
+	r.rwm.Lock()
+	defer r.rwm.Unlock()
 
 	// Make sure chat exists.
 	if chat, ok := r.Chats[chatID]; ok {
@@ -181,6 +181,8 @@ func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, 
 
 // FindModerators ...
 func (r *SubscriberRepository) FindModerators() ([]string, error) {
+	r.rwm.RLock()
+	defer r.rwm.RUnlock()
 	return r.Moderators, nil
 }
 
