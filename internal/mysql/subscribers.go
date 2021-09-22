@@ -7,12 +7,12 @@ import (
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 )
 
-// SubscriberRepository ...
+// SubscriberRepository is a persistent mysql reepository.
 type SubscriberRepository struct {
 	db *sql.DB
 }
 
-// FindSubscribers ...
+// FindSubscribers finds all subscribers on a specific chat.
 func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subscriber, error) {
 	results, err := r.db.Query(`SELECT account, online, banned_until FROM subscribers WHERE chat = ?`, chatID)
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subs
 	return subs, nil
 }
 
-// FindEligibleSubscribers ...
+// FindEligibleSubscribers finds all subscribers eligible to receive chat messages.
 func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscriber.Subscriber, error) {
 	results, err := r.db.Query(`
 	SELECT account, online FROM subscribers
@@ -67,7 +67,7 @@ func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscri
 	return subs, nil
 }
 
-// Subscribe ...
+// Subscribe subscribes an account to the chat.
 func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
 	result, err := r.db.Query(`INSERT INTO subscribers (account, chat) VALUES (?,?) ON DUPLICATE KEY UPDATE account=account;`, account, chatID)
 	if err != nil {
@@ -79,7 +79,7 @@ func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
 	return nil
 }
 
-// Unsubscribe ...
+// Unsubscribe unsubscribes an account from chat.
 func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error {
 	result, err := r.db.Query(`DELETE FROM subscribers WHERE account = ? AND chat = ?;`, account, chatID)
 	if err != nil {
@@ -91,7 +91,7 @@ func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error 
 	return nil
 }
 
-// UpdateOnlineStatus ...
+// UpdateOnlineStatus updates online status of an account.
 func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) error {
 	result, err := r.db.Query(`UPDATE subscribers set online = ? WHERE account = ?;`, online, account)
 	if err != nil {
@@ -103,7 +103,7 @@ func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) e
 	return nil
 }
 
-// UpdateBannedUntil ...
+// UpdateBannedUntil updates the ban date of an account.
 func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, until *time.Time) error {
 	result, err := r.db.Query(`UPDATE subscribers set banned_until = ? WHERE account = ? AND chat = ?;`, until, account, chatID)
 	if err != nil {
@@ -115,7 +115,7 @@ func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, 
 	return nil
 }
 
-// FindModerators ...
+// FindModerators finds all moderators.
 func (r *SubscriberRepository) FindModerators() ([]string, error) {
 	results, err := r.db.Query(`SELECT account FROM moderators`)
 	if err != nil {
@@ -140,7 +140,7 @@ func (r *SubscriberRepository) FindModerators() ([]string, error) {
 	return mods, nil
 }
 
-// NewSubscriberRepository ...
+// NewSubscriberRepository returns a new repository with all dependencies.
 func NewSubscriberRepository(db *sql.DB) *SubscriberRepository {
 	return &SubscriberRepository{
 		db: db,

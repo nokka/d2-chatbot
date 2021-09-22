@@ -8,14 +8,14 @@ import (
 	"github.com/nokka/d2-chatbot/internal/subscriber"
 )
 
-// SubscriberRepository ...
+// SubscriberRepository is an in memory repository used to store subscribers.
 type SubscriberRepository struct {
 	Chats      map[string]map[string]subscriber.Subscriber
 	Moderators []string
 	rwm        sync.RWMutex
 }
 
-// SyncSubscribers ...
+// SyncSubscribers syncs the given subscribers to memory.
 func (r *SubscriberRepository) SyncSubscribers(chatID string, subscribers []subscriber.Subscriber) error {
 	r.rwm.Lock()
 	defer r.rwm.Unlock()
@@ -32,7 +32,7 @@ func (r *SubscriberRepository) SyncSubscribers(chatID string, subscribers []subs
 	return errors.New("unable to sync, chat not found")
 }
 
-// SyncModerators ...
+// SyncModerators syncs the given moderator names to memory.
 func (r *SubscriberRepository) SyncModerators(moderators []string) {
 	r.rwm.Lock()
 	defer r.rwm.Unlock()
@@ -40,7 +40,7 @@ func (r *SubscriberRepository) SyncModerators(moderators []string) {
 	r.Moderators = moderators
 }
 
-// FindSubscriber ...
+// FindSubscriber looks through the in memory map to find a subscriber on the given chat.
 func (r *SubscriberRepository) FindSubscriber(account string, chatID string) *subscriber.Subscriber {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
@@ -55,7 +55,7 @@ func (r *SubscriberRepository) FindSubscriber(account string, chatID string) *su
 	return nil
 }
 
-// FindSubscribers ...
+// FindSubscribers looks through memory to find all subscribers on the given chat id.
 func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subscriber, error) {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
@@ -72,7 +72,7 @@ func (r *SubscriberRepository) FindSubscribers(chatID string) ([]subscriber.Subs
 	return nil, errors.New("failed to find subscribers, chat not found")
 }
 
-// FindEligibleSubscribers ...
+// FindEligibleSubscribers finds subscribers that are eligible to receive chat messages on a chat.
 func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscriber.Subscriber, error) {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
@@ -92,7 +92,7 @@ func (r *SubscriberRepository) FindEligibleSubscribers(chatID string) ([]subscri
 	return nil, errors.New("failed to find online subscribers, chat not found")
 }
 
-// Subscribe ...
+// Subscribe adds a new account to the given chat.
 func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
 	r.rwm.Lock()
 	defer r.rwm.Unlock()
@@ -114,7 +114,7 @@ func (r *SubscriberRepository) Subscribe(account string, chatID string) error {
 	return nil
 }
 
-// Unsubscribe ...
+// Unsubscribe removes the account from the given chat.
 func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error {
 	r.rwm.Lock()
 	defer r.rwm.Unlock()
@@ -129,7 +129,7 @@ func (r *SubscriberRepository) Unsubscribe(account string, chatID string) error 
 	return nil
 }
 
-// UpdateOnlineStatus ...
+// UpdateOnlineStatus updates the status of an account in memory.
 func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) error {
 	r.rwm.Lock()
 	defer r.rwm.Unlock()
@@ -145,7 +145,7 @@ func (r *SubscriberRepository) UpdateOnlineStatus(account string, online bool) e
 	return nil
 }
 
-// SubscriberExists ...
+// SubscriberExists checks if a given account exists.
 func (r *SubscriberRepository) SubscriberExists(account string) bool {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
@@ -160,7 +160,7 @@ func (r *SubscriberRepository) SubscriberExists(account string) bool {
 	return false
 }
 
-// UpdateBannedUntil ...
+// UpdateBannedUntil updates the ban time.
 func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, until *time.Time) error {
 	r.rwm.Lock()
 	defer r.rwm.Unlock()
@@ -179,20 +179,20 @@ func (r *SubscriberRepository) UpdateBannedUntil(account string, chatID string, 
 	return nil
 }
 
-// FindModerators ...
+// FindModerators finds all moderators.
 func (r *SubscriberRepository) FindModerators() ([]string, error) {
 	r.rwm.RLock()
 	defer r.rwm.RUnlock()
 	return r.Moderators, nil
 }
 
-// NewSubscriberRepository ...
+// NewSubscriberRepository returns a repository with all dependencies set up.
 func NewSubscriberRepository() *SubscriberRepository {
 	return &SubscriberRepository{
 		Chats: map[string]map[string]subscriber.Subscriber{
-			"chat":  make(map[string]subscriber.Subscriber, 0),
-			"trade": make(map[string]subscriber.Subscriber, 0),
-			"hc":    make(map[string]subscriber.Subscriber, 0),
+			"chat":  make(map[string]subscriber.Subscriber),
+			"trade": make(map[string]subscriber.Subscriber),
+			"hc":    make(map[string]subscriber.Subscriber),
 		},
 		Moderators: make([]string, 0),
 	}
