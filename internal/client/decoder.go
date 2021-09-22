@@ -9,10 +9,10 @@ import (
 // Compile the regex once.
 var r = regexp.MustCompile(`(?i)^<from\s+([a-z0-9_\-]+)>\s+([#@!\~]{1})\s*(.+)?`)
 
-// IP address regex to remove sensitive information.
+// IP address regex to remove sensitive information when replying.
 var ipregx = regexp.MustCompile(`(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}`)
 
-// Decoder ...
+// Decoder will decode incoming messages.
 type decoder struct{}
 
 // Allowed message types.
@@ -37,14 +37,14 @@ var cmds = map[string]struct{}{
 	TypeBan:         {},
 }
 
-// Message ...
+// Message is the message decoded.
 type Message struct {
 	Account string
 	Cmd     string
 	Message string
 }
 
-// Decode ...
+// Decode will decode incoming message string and validate it.
 func (d decoder) Decode(data []byte) (*Message, bool) {
 	matches := r.FindStringSubmatch(string(data))
 
