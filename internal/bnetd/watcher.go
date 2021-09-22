@@ -49,7 +49,8 @@ func (w *Watcher) Start() error {
 	return nil
 }
 
-// HandleUpdate ...
+// HandleUpdate decodes login/logout entries on the bnetd.log and decides if
+// the users online state has to be changed.
 func (w *Watcher) HandleUpdate(data string) error {
 	change, valid := w.decoder.Decode(data)
 

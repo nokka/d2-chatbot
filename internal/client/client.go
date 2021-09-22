@@ -67,7 +67,8 @@ func (c *Client) Open() error {
 	return nil
 }
 
-// Sync ...
+// Sync will sync subscribers from persistent storage to in memory storage.
+// It's usually run once on start up to get the current state.
 func (c *Client) Sync() error {
 	subscribers, err := c.subscribers.FindSubscribers(c.chatID)
 	if err != nil {
@@ -82,7 +83,7 @@ func (c *Client) Sync() error {
 	return nil
 }
 
-// Subscribe ...
+// Subscribe receives a message and subscribes the calling user.
 func (c *Client) Subscribe(message *Message) error {
 	// Check in memory store if the account is subscribed.
 	sub := c.inmem.FindSubscriber(message.Account, c.chatID)
@@ -118,7 +119,7 @@ func (c *Client) Subscribe(message *Message) error {
 	return nil
 }
 
-// Unsubscribe ...
+// Unsubscribe will unsubscribe a user from the given channel.
 func (c *Client) Unsubscribe(message *Message) error {
 	// Check in memory store if the account is subscribed.
 	sub := c.inmem.FindSubscriber(message.Account, c.chatID)
@@ -150,7 +151,7 @@ func (c *Client) Unsubscribe(message *Message) error {
 	return nil
 }
 
-// Publish ...
+// Publish is used to publish a message to all subscribers on the client chat channel.
 func (c *Client) Publish(message *Message) error {
 	// Lock to publish in order to preserve message order integrity.
 	c.publishLock.Lock()
@@ -176,7 +177,6 @@ func (c *Client) Publish(message *Message) error {
 	}
 
 	for _, s := range subscribers {
-		// Localize scope.
 		sub := s
 
 		if sub.Account == message.Account {
@@ -193,7 +193,7 @@ func (c *Client) Publish(message *Message) error {
 	return nil
 }
 
-// Ban ...
+// Ban will ban the given user if the caller is allowed to ban.
 func (c *Client) Ban(message *Message) error {
 	mods, err := c.inmem.FindModerators()
 	if err != nil {
@@ -333,7 +333,7 @@ func (c *Client) listenAndClose() {
 	}
 }
 
-// New ...
+// New will create a new Client with all dependencies set up.
 func New(addr string, chatID string, password string, inmem inmemRepository, subscribers subscriberRepository) *Client {
 	return &Client{
 		addr:        addr,

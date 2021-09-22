@@ -8,10 +8,10 @@ import (
 // Compile the regex once.
 var r = regexp.MustCompile(`(?i)^.*\s"([a-z0-9_\-]+)"\s([a-z]+\s[a-z]{2,3})`)
 
-// Decoder ...
+// Decoder decodes bnet.log entries.
 type decoder struct{}
 
-// StatusChange ...
+// StatusChange is used to represent a valid status change.
 type StatusChange struct {
 	Account string
 	Online  bool
@@ -23,7 +23,7 @@ const (
 	action  = 2
 )
 
-// Decode ...
+// Decode reads incoming log entries and validates them.
 func (d decoder) Decode(data string) (*StatusChange, bool) {
 	matches := r.FindStringSubmatch(data)
 
