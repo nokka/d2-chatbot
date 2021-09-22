@@ -54,7 +54,7 @@ There are also commands used only by moderators to ban players.
 
 #### Example
 
-### Subscribe to a channel
+### Unsubscribe to a channel
 
 ```bash
 # Subscribe to chat
@@ -73,13 +73,13 @@ There are also commands used only by moderators to ban players.
 
 ```bash
 # Chat on chat channel
-//chat Hello!
+//chat Hello team
 
 # Chat on hc channel
-//hc Hello!
+//hc Hello team
 
 # Chat on the trade channel
-//trade Hello!
+//trade team
 ```
 
 ---
