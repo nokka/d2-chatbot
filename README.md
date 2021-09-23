@@ -1,5 +1,6 @@
 # D2-Chatbot
 D2 Chatbot provides a global chat for any Diablo 2 server running on PvpGN and provides in game community chat channels.
+Writing messages in game to players is done by using [nokka/d2client](https://github.com/nokka/d2client).
 
 --- 
 
@@ -52,8 +53,6 @@ There are also commands used only by moderators to ban players.
 //sub hc
 ```
 
-#### Example
-
 ### Unsubscribe to a channel
 
 ```bash
@@ -66,8 +65,6 @@ There are also commands used only by moderators to ban players.
 # Subscribe to hc
 //unsub hc
 ```
-
-#### Example
 
 ### Chat on channel
 
