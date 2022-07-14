@@ -57,7 +57,7 @@ There are also commands used only by moderators to ban players.
 
 ```bash
 # Subscribe to chat
-//unnsub chat
+//unsub chat
 
 # Subscribe to trade
 //unsub trade
